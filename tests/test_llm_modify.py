@@ -68,10 +68,14 @@ async def ask_ollama_for_modification(blocks: list) -> list:
             print(f"Error connecting to Ollama: {e}")
             return []
 
-async def test_llm_pipeline():
-    file_path = "example files/공문 예시.hwpx"
-    if not os.path.exists(file_path):
-        print(f"Error: Could not find {file_path}")
+async def main():
+    template_path = "../templates/공문 예시.hwpx"
+    output_path = "../result/완성본_테스트.hwpx"
+    
+    # 1. 문서 구조 읽기
+    print(f"1. {template_path} 구조 읽기 중...")
+    if not os.path.exists(template_path):
+        print(f"Error: Could not find {template_path}")
         sys.exit(1)
 
     print("Step 1: Reading File...")

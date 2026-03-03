@@ -16,3 +16,13 @@ venv/
 # Project specific temp files
 /tmp_hwpx/
 modified_*.hwpx
+/temp_hwpx_debug
+/temp_hwpx_test_fix
+/debug
+/result
+/temp_extract
+/templates/summary.json
+
+# If you want to ignore all raw documents, uncomment below:
+# *.hwpx
+# /templates/

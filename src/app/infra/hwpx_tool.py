@@ -80,7 +80,8 @@ class HwpxTool:
                         text_parts.append(self._get_element_text(run_elem))
                 p_text = "".join(text_parts).strip()
             
-            if p_text:
+            # Yield the paragraph block if it has text, or if it has no table (an empty line).
+            if p_text or not has_table:
                 yield {
                     "block_id": f"sec{section_idx}_p{p_idx}",
                     "type": "paragraph",
@@ -164,6 +165,32 @@ class HwpxTool:
             has_table = False
             for tbl_elem in p_elem.findall(f".//{_HP_NS}tbl"):
                 has_table = True
+                
+                import copy
+                
+                # Check max requested row idx for this table
+                prefix = f"sec{section_idx}_tbl{tbl_idx}_r"
+                max_requested_r = -1
+                for b_id in mod_map.keys():
+                    if b_id.startswith(prefix):
+                        try:
+                            # e.g., sec0_tbl0_r5_c0 -> 5
+                            r_part = b_id[len(prefix):].split("_c")[0]
+                            max_requested_r = max(max_requested_r, int(r_part))
+                        except ValueError:
+                            pass
+                            
+                # Count current rows and clone if necessary
+                tr_elems = tbl_elem.findall(f".//{_HP_NS}tr")
+                current_rows = len(tr_elems)
+                if max_requested_r >= current_rows and current_rows > 0:
+                    rows_to_add = max_requested_r - current_rows + 1
+                    last_tr = tr_elems[-1]
+                    for _ in range(rows_to_add):
+                        new_tr = copy.deepcopy(last_tr)
+                        last_tr.addnext(new_tr)
+                        last_tr = new_tr
+
                 r_idx = 0
                 for tr_elem in tbl_elem.findall(f".//{_HP_NS}tr"):
                     c_idx = 0
@@ -172,7 +199,27 @@ class HwpxTool:
                         if block_id in mod_map:
                             mod = mod_map[block_id]
                             t_nodes = tc_elem.findall(f".//{_HP_NS}t")
-                            self._replace_across_xml_runs(t_nodes, mod["target_text"], mod["replace_text"])
+                            
+                            if not t_nodes and mod["replace_text"]:
+                                # Natively empty cell with no <hp:t> tag. We must inject one.
+                                runs = tc_elem.findall(f".//{_HP_NS}run")
+                                if runs:
+                                    new_t = etree.SubElement(runs[-1], f"{_HP_NS}t")
+                                    new_t.text = mod["replace_text"]
+                                else:
+                                    ps = tc_elem.findall(f".//{_HP_NS}p")
+                                    if ps:
+                                        new_run = etree.SubElement(ps[-1], f"{_HP_NS}run")
+                                        new_t = etree.SubElement(new_run, f"{_HP_NS}t")
+                                        new_t.text = mod["replace_text"]
+                            else:
+                                if mod["target_text"] == "" and t_nodes:
+                                    # Target text was empty, but <hp:t> exists (e.g., `<hp:t></hp:t>`).
+                                    t_nodes[0].text = mod["replace_text"]
+                                    for t in t_nodes[1:]:
+                                        t.text = ""
+                                else:
+                                    self._replace_across_xml_runs(t_nodes, mod["target_text"], mod["replace_text"])
                         c_idx += 1
                     r_idx += 1
                 tbl_idx += 1
@@ -181,9 +228,24 @@ class HwpxTool:
             if not has_table and block_id in mod_map:
                  mod = mod_map[block_id]
                  # We only get texts outside of tables here since has_table is False.
-                 # If a paragraph has a table we shouldn't attempt modifying paragraph texts since it's handled above / skipped
                  t_nodes = p_elem.findall(f".//{_HP_NS}t")
-                 self._replace_across_xml_runs(t_nodes, mod["target_text"], mod["replace_text"])
+                 
+                 if not t_nodes and mod["replace_text"]:
+                     runs = p_elem.findall(f".//{_HP_NS}run")
+                     if runs:
+                         new_t = etree.SubElement(runs[-1], f"{_HP_NS}t")
+                         new_t.text = mod["replace_text"]
+                     else:
+                         new_run = etree.SubElement(p_elem, f"{_HP_NS}run")
+                         new_t = etree.SubElement(new_run, f"{_HP_NS}t")
+                         new_t.text = mod["replace_text"]
+                 else:
+                     if mod["target_text"] == "" and t_nodes:
+                         t_nodes[0].text = mod["replace_text"]
+                         for t in t_nodes[1:]:
+                             t.text = ""
+                     else:
+                         self._replace_across_xml_runs(t_nodes, mod["target_text"], mod["replace_text"])
                  
             p_idx += 1
             
