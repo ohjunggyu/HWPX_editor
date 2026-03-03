@@ -14,10 +14,12 @@ if sys.platform == 'win32':
     sys.stdout.reconfigure(encoding='utf-8')
     sys.stdin.reconfigure(encoding='utf-8')
 
-URL_READ = "http://127.0.0.1:8000/api/v1/hwpx/read"
-URL_MODIFY = "http://127.0.0.1:8000/api/v1/hwpx/modify"
-URL_OLLAMA = "http://localhost:11435/api/chat"
-MODEL_NAME = "gemma3:12b" # Update this to your standard model
+# Configuration loaded from .env
+API_HOST = os.getenv("API_HOST", "http://127.0.0.1:8000")
+URL_READ = f"{API_HOST}/api/v1/hwpx/read"
+URL_MODIFY = f"{API_HOST}/api/v1/hwpx/modify"
+URL_OLLAMA = os.getenv("OLLAMA_URL", "http://localhost:11435/api/chat")
+MODEL_NAME = os.getenv("OLLAMA_MODEL", "gemma3:12b")
 
 DEBUG_MODE = os.getenv("DEBUG", "false").lower() == "true"
 
