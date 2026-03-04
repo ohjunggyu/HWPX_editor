@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<hp:secDef xmlns:hp="http://www.hancom.co.kr/hwpml/2011/paragraph">
+    <hp:p id="0">
+        <hp:run>
+            <hp:t>Replaced Text without lineseg</hp:t>
+        </hp:run>
+        </hp:p>
+</hp:secDef>

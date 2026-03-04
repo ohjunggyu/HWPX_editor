@@ -8,11 +8,12 @@ URL_READ = "http://127.0.0.1:8000/api/v1/hwpx/read"
 URL_MODIFY = "http://127.0.0.1:8000/api/v1/hwpx/modify"
 URL_OLLAMA = "http://localhost:11435/api/chat"
 
+
 async def ask_ollama_for_modification(blocks: list) -> list:
     """Interacts with local Ollama to generate a modification payload."""
     # We will pass a sample of the blocks to the LLM so it's not overwhelmed
     blocks_text = json.dumps(blocks[:10], ensure_ascii=False, indent=2)
-    
+
     prompt = f"""
 다음은 HWPX 문서에서 추출한 텍스트 블록의 일부입니다:
 {blocks_text}
@@ -31,15 +32,18 @@ async def ask_ollama_for_modification(blocks: list) -> list:
 """
     print("Requesting LLM modification from Ollama (localhost:11435)...")
     payload = {
-        "model": "llama3.1", # Default to a common model name, can be anything the user has installed
+        "model": "llama3.1",  # Default to a common model name, can be anything the user has installed
         "messages": [
-            {"role": "system", "content": "You are a helpful AI assistant that strictly returns valid JSON arrays without markdown block delimiters."},
-            {"role": "user", "content": prompt}
+            {
+                "role": "system",
+                "content": "You are a helpful AI assistant that strictly returns valid JSON arrays without markdown block delimiters.",
+            },
+            {"role": "user", "content": prompt},
         ],
         "stream": False,
-        "format": "json"
+        "format": "json",
     }
-    
+
     async with httpx.AsyncClient() as client:
         try:
             # We don't know the exact model name the user has, trying a generic approach or just 'qwen' or 'llama3' etc.
@@ -51,12 +55,12 @@ async def ask_ollama_for_modification(blocks: list) -> list:
                 data = response.json()
                 content = data.get("message", {}).get("content", "[]")
                 print(f"LLM Response:\n{content}")
-                
+
                 # Parse JSON
                 try:
                     mods = json.loads(content)
                     if isinstance(mods, dict):
-                        mods = [mods] # Wrap in list if it returned a single dict
+                        mods = [mods]  # Wrap in list if it returned a single dict
                     return mods
                 except json.JSONDecodeError:
                     print("Failed to parse LLM JSON response.")
@@ -68,10 +72,11 @@ async def ask_ollama_for_modification(blocks: list) -> list:
             print(f"Error connecting to Ollama: {e}")
             return []
 
+
 async def main():
     template_path = "../templates/공문 예시.hwpx"
     output_path = "../result/완성본_테스트.hwpx"
-    
+
     # 1. 문서 구조 읽기
     print(f"1. {template_path} 구조 읽기 중...")
     if not os.path.exists(template_path):
@@ -79,24 +84,24 @@ async def main():
         sys.exit(1)
 
     print("Step 1: Reading File...")
-    
+
     async with httpx.AsyncClient() as client:
         # Step 1: Read
         with open(file_path, "rb") as f:
             files = {"file": (os.path.basename(file_path), f, "application/octet-stream")}
             read_res = await client.post(URL_READ, files=files, timeout=10.0)
-            
+
         if read_res.status_code != 200:
             print(f"Read API Failed: {read_res.text}")
             return
-            
+
         read_data = read_res.json()
-        blocks = read_data.get('blocks', [])
-        
+        blocks = read_data.get("blocks", [])
+
         if not blocks:
             print("No text blocks found in the document.")
             return
-            
+
         # Step 2: LLM Call
         modifications = await ask_ollama_for_modification(blocks)
         if not modifications:
@@ -105,13 +110,13 @@ async def main():
 
         print(f"\nStep 3: Applying Modifications via Modify API...")
         modifications_json = json.dumps(modifications)
-        
+
         # Step 3: Modify
         with open(file_path, "rb") as f:
             files = {"file": (os.path.basename(file_path), f, "application/octet-stream")}
             data = {"modifications": modifications_json}
             mod_res = await client.post(URL_MODIFY, files=files, data=data, timeout=10.0)
-            
+
         if mod_res.status_code == 200:
             base_name = os.path.basename(file_path)
             output_filepath = f"modified_llm_{base_name}"
@@ -120,6 +125,7 @@ async def main():
             print(f"SUCCESS: Saved modified file to {output_filepath}")
         else:
             print(f"Modify API Failed: {mod_res.text}")
+
 
 if __name__ == "__main__":
     asyncio.run(test_llm_pipeline())

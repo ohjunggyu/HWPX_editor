@@ -17,7 +17,7 @@ xml_str = """
 </hp:tbl>
 """
 
-root = etree.fromstring(xml_str.encode('utf-8'))
+root = etree.fromstring(xml_str.encode("utf-8"))
 
 # Find all rows
 rows = root.findall(f".//{_HP_NS}tr")
