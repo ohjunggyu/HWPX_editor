@@ -1,6 +1,6 @@
-from src.app.infra.hwpx_tool import HwpxTool
 import os
-from lxml import etree
+
+from src.app.infra.hwpx_tool import HwpxTool
 
 tool = HwpxTool()
 # Create a dummy section XML to test apply_modifications.
@@ -27,7 +27,7 @@ try:
     ]
     tool.apply_modifications("temp_test/section0.xml", modifications, 0)
 
-    with open("temp_test/section0.xml", "r", encoding="utf-8") as f:
+    with open("temp_test/section0.xml", encoding="utf-8") as f:
         print(f.read())
 except Exception as e:
     print("Error:", e)

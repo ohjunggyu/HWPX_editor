@@ -1,7 +1,8 @@
 import asyncio
-import httpx
 import os
 import sys
+
+import httpx
 
 
 async def test_read_api():
@@ -26,7 +27,7 @@ async def test_read_api():
             print(f"File Name: {data.get('file_name')}")
             blocks = data.get("blocks", [])
             print(f"Found {len(blocks)} blocks.")
-            for i, block in enumerate(blocks[:10]):  # Print first 10
+            for _i, block in enumerate(blocks[:10]):  # Print first 10
                 print(f"  [{block['block_id']}] ({block['type']}) : {block['text']}")
             if len(blocks) > 10:
                 print("  ... and more.")

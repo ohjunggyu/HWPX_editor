@@ -1,6 +1,8 @@
 import os
 import zipfile
-from typing import Iterator, Dict, Any, List
+from collections.abc import Iterator
+from typing import Any
+
 from lxml import etree
 
 _HP_NS = "{http://www.hancom.co.kr/hwpml/2011/paragraph}"
@@ -21,7 +23,7 @@ class HwpxTool:
     def package_hwpx(self, extracted_path: str, output_path: str) -> None:
         """Packages the extracted directory back into a HWPX (ZIP) file."""
         with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zip_ref:
-            for root, dirs, files in os.walk(extracted_path):
+            for root, _dirs, files in os.walk(extracted_path):
                 for file in files:
                     file_path = os.path.join(root, file)
                     arcname = os.path.relpath(file_path, extracted_path)
@@ -35,7 +37,7 @@ class HwpxTool:
                 text_parts.append(t_node.text)
         return "".join(text_parts).strip()
 
-    def iter_blocks(self, section_xml_path: str, section_idx: int = 0) -> Iterator[Dict[str, Any]]:
+    def iter_blocks(self, section_xml_path: str, section_idx: int = 0) -> Iterator[dict[str, Any]]:
         """Parses XML and yields blocks with semantic block_ids."""
         tree = etree.parse(section_xml_path)
         root = tree.getroot()
@@ -90,7 +92,7 @@ class HwpxTool:
                 }
             p_idx += 1
 
-    def _distribute_lengths(self, new_total: int, original_weights: List[int]) -> List[int]:
+    def _distribute_lengths(self, new_total: int, original_weights: list[int]) -> list[int]:
         """Distributes the new total length across the original weights using the largest remainder method."""
         if not original_weights:
             return []
@@ -145,7 +147,7 @@ class HwpxTool:
                     curr_idx += 1
 
     def _replace_across_xml_runs(
-        self, t_nodes: List[etree._Element], find_text: str, replace_text: str
+        self, t_nodes: list[etree._Element], find_text: str, replace_text: str
     ) -> int:
         """Finds and replaces texts across fragmented <hp:t> XML nodes while preserving tags."""
         if not t_nodes:
@@ -169,7 +171,7 @@ class HwpxTool:
 
         # 5. Write back to nodes
         cursor = 0
-        for t_node, size in zip(t_nodes, redistributed):
+        for t_node, size in zip(t_nodes, redistributed, strict=False):
             # 6. We must clear tail or other elements? No, _set_xml_run_text handles linebreaks.
             # But note: if the part itself contains \n, _set_xml_run_text expands it
             # within its parent. This is safe.
@@ -179,7 +181,7 @@ class HwpxTool:
         return merged.count(find_text)
 
     def apply_modifications(
-        self, section_xml_path: str, modifications: List[Dict[str, str]], section_idx: int = 0
+        self, section_xml_path: str, modifications: list[dict[str, str]], section_idx: int = 0
     ) -> None:
         """Applies text modifications to the target Block IDs in the XML."""
         tree = etree.parse(section_xml_path)

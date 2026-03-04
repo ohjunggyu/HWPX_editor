@@ -1,9 +1,11 @@
 import os
 import shutil
 import tempfile
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
-from ..service.editor_service import EditorService
+
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+
 from ..domain.models import HwpxReadResponse
+from ..service.editor_service import EditorService
 
 router = APIRouter()
 editor_service = EditorService()
@@ -26,7 +28,7 @@ async def read_hwpx(file: UploadFile = File(...)):
         response = editor_service.process_read_request(temp_path, file.filename)
         return response
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)
@@ -50,7 +52,7 @@ async def modify_hwpx(
 
         req = HwpxModifyRequest(modifications=mods_data)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Invalid modifications JSON: {e}")
+        raise HTTPException(status_code=400, detail=f"Invalid modifications JSON: {e}") from e
 
     # Save the uploaded file to a temporary location
     fd_in, temp_in_path = tempfile.mkstemp(suffix=".hwpx")
@@ -81,7 +83,7 @@ async def modify_hwpx(
     except Exception as e:
         if os.path.exists(temp_out_path):
             os.remove(temp_out_path)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
     finally:
         if os.path.exists(temp_in_path):
             os.remove(temp_in_path)

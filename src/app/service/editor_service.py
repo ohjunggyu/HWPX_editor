@@ -1,9 +1,9 @@
 import os
 import shutil
 import uuid
-from typing import List
+
 from ..core.config import settings
-from ..domain.models import HwpxReadResponse, HwpxBlock
+from ..domain.models import HwpxBlock, HwpxReadResponse
 from ..infra.hwpx_tool import HwpxTool
 
 
@@ -17,7 +17,7 @@ class EditorService:
         session_id = str(uuid.uuid4())
         session_dir = os.path.join(settings.TEMP_DIR, session_id)
 
-        blocks: List[HwpxBlock] = []
+        blocks: list[HwpxBlock] = []
         try:
             # 1. Extract
             extracted_path = self.tool.extract_hwpx(file_path, session_dir)
@@ -52,7 +52,7 @@ class EditorService:
         return HwpxReadResponse(file_name=original_filename, blocks=blocks)
 
     def process_modify_request(
-        self, file_path: str, modifications: List[dict], output_filepath: str
+        self, file_path: str, modifications: list[dict], output_filepath: str
     ) -> str:
         """Extracts HWPX, applies modifications, and packages it back."""
         session_id = str(uuid.uuid4())

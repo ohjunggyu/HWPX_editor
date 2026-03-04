@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+
 from .api.endpoints import router as hwpx_router
 from .core.config import settings
 

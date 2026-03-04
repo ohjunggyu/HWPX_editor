@@ -1,10 +1,11 @@
 import asyncio
-import httpx
+import glob
+import json
 import os
 import sys
-import json
-import glob
 from datetime import datetime
+
+import httpx
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -149,7 +150,7 @@ async def main():
 
     if os.path.exists(summary_path):
         print(f"🔍 캐시된 양식 요약 정보({os.path.basename(summary_path)})를 불러옵니다...")
-        with open(summary_path, "r", encoding="utf-8") as f:
+        with open(summary_path, encoding="utf-8") as f:
             template_summaries = json.load(f)
     else:
         print(

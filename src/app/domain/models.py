@@ -1,4 +1,4 @@
-from typing import List
+
 from pydantic import BaseModel
 
 
@@ -10,7 +10,7 @@ class HwpxBlock(BaseModel):
 
 class HwpxReadResponse(BaseModel):
     file_name: str
-    blocks: List[HwpxBlock]
+    blocks: list[HwpxBlock]
 
 
 class ModificationItem(BaseModel):
@@ -20,4 +20,4 @@ class ModificationItem(BaseModel):
 
 
 class HwpxModifyRequest(BaseModel):
-    modifications: List[ModificationItem]
+    modifications: list[ModificationItem]
