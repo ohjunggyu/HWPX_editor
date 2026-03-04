@@ -119,8 +119,29 @@ class HwpxTool:
         return result
 
     def _set_xml_run_text(self, t_node: etree._Element, new_text: str):
-        """Sets the text of a <hp:t> node safely."""
-        t_node.text = new_text
+        """Sets the text of a <hp:t> node safely, injecting <hp:lineBreak/> if newlines exist."""
+        if "\n" not in new_text:
+            t_node.text = new_text
+            return
+            
+        parts = new_text.split("\n")
+        t_node.text = parts[0]
+        
+        if len(parts) > 1:
+            run_node = t_node.getparent()
+            if run_node is not None:
+                curr_idx = list(run_node).index(t_node) + 1
+                for part in parts[1:]:
+                    # Insert lineBreak
+                    lb = etree.Element(f"{_HP_NS}lineBreak")
+                    run_node.insert(curr_idx, lb)
+                    curr_idx += 1
+                    
+                    # Insert new text part
+                    new_t = etree.Element(f"{_HP_NS}t")
+                    new_t.text = part
+                    run_node.insert(curr_idx, new_t)
+                    curr_idx += 1
 
     def _replace_across_xml_runs(self, t_nodes: List[etree._Element], find_text: str, replace_text: str) -> int:
         """Finds and replaces texts across fragmented <hp:t> XML nodes while preserving tags."""
@@ -146,6 +167,9 @@ class HwpxTool:
         # 5. Write back to nodes
         cursor = 0
         for t_node, size in zip(t_nodes, redistributed):
+            # 6. We must clear tail or other elements? No, _set_xml_run_text handles linebreaks.
+            # But note: if the part itself contains \n, _set_xml_run_text expands it 
+            # within its parent. This is safe.
             self._set_xml_run_text(t_node, new_merged[cursor : cursor + size])
             cursor += size
             
@@ -200,22 +224,27 @@ class HwpxTool:
                             mod = mod_map[block_id]
                             t_nodes = tc_elem.findall(f".//{_HP_NS}t")
                             
+                            # Force Hancom Office to recalculate layout for modified cells
+                            for cell_p in tc_elem.findall(f".//{_HP_NS}p"):
+                                for lsa in cell_p.findall(f"./{_HP_NS}linesegarray"):
+                                    cell_p.remove(lsa)
+                            
                             if not t_nodes and mod["replace_text"]:
                                 # Natively empty cell with no <hp:t> tag. We must inject one.
                                 runs = tc_elem.findall(f".//{_HP_NS}run")
                                 if runs:
                                     new_t = etree.SubElement(runs[-1], f"{_HP_NS}t")
-                                    new_t.text = mod["replace_text"]
+                                    self._set_xml_run_text(new_t, mod["replace_text"])
                                 else:
                                     ps = tc_elem.findall(f".//{_HP_NS}p")
                                     if ps:
                                         new_run = etree.SubElement(ps[-1], f"{_HP_NS}run")
                                         new_t = etree.SubElement(new_run, f"{_HP_NS}t")
-                                        new_t.text = mod["replace_text"]
+                                        self._set_xml_run_text(new_t, mod["replace_text"])
                             else:
                                 if mod["target_text"] == "" and t_nodes:
                                     # Target text was empty, but <hp:t> exists (e.g., `<hp:t></hp:t>`).
-                                    t_nodes[0].text = mod["replace_text"]
+                                    self._set_xml_run_text(t_nodes[0], mod["replace_text"])
                                     for t in t_nodes[1:]:
                                         t.text = ""
                                 else:
@@ -227,6 +256,11 @@ class HwpxTool:
             block_id = f"sec{section_idx}_p{p_idx}"
             if not has_table and block_id in mod_map:
                  mod = mod_map[block_id]
+                 
+                 # Force layout recalculation for this paragraph
+                 for lsa in p_elem.findall(f"./{_HP_NS}linesegarray"):
+                     p_elem.remove(lsa)
+                     
                  # We only get texts outside of tables here since has_table is False.
                  t_nodes = p_elem.findall(f".//{_HP_NS}t")
                  
@@ -234,14 +268,14 @@ class HwpxTool:
                      runs = p_elem.findall(f".//{_HP_NS}run")
                      if runs:
                          new_t = etree.SubElement(runs[-1], f"{_HP_NS}t")
-                         new_t.text = mod["replace_text"]
+                         self._set_xml_run_text(new_t, mod["replace_text"])
                      else:
                          new_run = etree.SubElement(p_elem, f"{_HP_NS}run")
                          new_t = etree.SubElement(new_run, f"{_HP_NS}t")
-                         new_t.text = mod["replace_text"]
+                         self._set_xml_run_text(new_t, mod["replace_text"])
                  else:
                      if mod["target_text"] == "" and t_nodes:
-                         t_nodes[0].text = mod["replace_text"]
+                         self._set_xml_run_text(t_nodes[0], mod["replace_text"])
                          for t in t_nodes[1:]:
                              t.text = ""
                      else:
