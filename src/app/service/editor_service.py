@@ -68,7 +68,7 @@ class EditorService:
 
             # 2. Group modifications by section
             # Currently we only parse section0.xml, but this logic can scale
-            section_mods = {}
+            section_mods: dict[int, list[dict]] = {}
             for mod in modifications:
                 # "sec0_p1" -> "sec0"
                 parts = mod["block_id"].split("_")

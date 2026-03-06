@@ -14,8 +14,9 @@ editor_service = EditorService()
 @router.post("/read", response_model=HwpxReadResponse)
 async def read_hwpx(file: UploadFile = File(...)):
     """Uploads a HWPX file and returns its texts as flattened blocks with IDs."""
-    if not file.filename.endswith(".hwpx"):
-        raise HTTPException(status_code=400, detail="Only .hwpx files are supported.")
+    if file.filename is None or not file.filename.endswith(".hwpx"):
+        raise HTTPException(
+            status_code=400, detail="Invalid file type. Only .hwpx files are allowed.")
 
     # Save the uploaded file to a temporary location
     fd, temp_path = tempfile.mkstemp(suffix=".hwpx")
@@ -39,9 +40,10 @@ async def modify_hwpx(
     file: UploadFile = File(...),
     modifications: str = Form(...),  # Expect JSON string
 ):
-    """Applies modifications to a HWPX file and returns the modified file."""
-    if not file.filename.endswith(".hwpx"):
-        raise HTTPException(status_code=400, detail="Only .hwpx files are supported.")
+    """Expects a HWPX file and a JSON string, returns modified HWPX file."""
+    if file.filename is None or not file.filename.endswith(".hwpx"):
+        raise HTTPException(
+            status_code=400, detail="Invalid file type. Only .hwpx files are allowed.")
 
     import json
 

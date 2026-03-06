@@ -22,6 +22,7 @@ dev = [
   "pytest-cov>=5",
   "ruff>=0.6",
   "mypy>=1.10",
+  "types-lxml>=2024",
   "pre-commit>=3.7",
   "httpx>=0.27",
 ]
@@ -36,6 +37,8 @@ ignore = ["E501", "B008"]
 
 [tool.mypy]
 python_version = "3.12"
+mypy_path = "src"
+explicit_package_bases = true
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
