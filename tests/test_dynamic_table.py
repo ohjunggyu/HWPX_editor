@@ -5,12 +5,19 @@ from app.infra.hwpx_tool import HwpxTool
 
 def test_dynamic_table_expansion():
     tool = HwpxTool()
-    template_path = "../templates/공문 예시.hwpx"
-    temp_dir = "../temp_hwpx"
+    base_dir = os.path.dirname(os.path.dirname(__file__))
+    template_path = os.path.join(base_dir, "templates", "공문 예시.hwpx")
 
-    result_dir = "../result"
+    if not os.path.exists(template_path):
+        import pytest
+
+        pytest.skip(f"Template not found: {template_path}")
+
+    temp_dir = os.path.join(base_dir, "temp_hwpx")
+    result_dir = os.path.join(base_dir, "result")
+
     if not os.path.exists(result_dir):
-        os.makedirs(result_dir)
+        os.makedirs(result_dir, exist_ok=True)
     output_path = os.path.join(result_dir, "완성본_동적테이블테스트.hwpx")
 
     print(f"Extracting {template_path}...")
