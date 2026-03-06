@@ -16,7 +16,8 @@ async def read_hwpx(file: UploadFile = File(...)):
     """Uploads a HWPX file and returns its texts as flattened blocks with IDs."""
     if file.filename is None or not file.filename.endswith(".hwpx"):
         raise HTTPException(
-            status_code=400, detail="Invalid file type. Only .hwpx files are allowed.")
+            status_code=400, detail="Invalid file type. Only .hwpx files are allowed."
+        )
 
     # Save the uploaded file to a temporary location
     fd, temp_path = tempfile.mkstemp(suffix=".hwpx")
@@ -43,7 +44,8 @@ async def modify_hwpx(
     """Expects a HWPX file and a JSON string, returns modified HWPX file."""
     if file.filename is None or not file.filename.endswith(".hwpx"):
         raise HTTPException(
-            status_code=400, detail="Invalid file type. Only .hwpx files are allowed.")
+            status_code=400, detail="Invalid file type. Only .hwpx files are allowed."
+        )
 
     import json
 
